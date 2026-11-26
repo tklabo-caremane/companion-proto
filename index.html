@@ -13,12 +13,16 @@
   /* ---------- キャラ常駐ステージ（固定表示・影なし） ---------- */
   .stagewrap{ flex:none; background:var(--cream); }
   #stage{ max-width:520px; margin:0 auto; display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--line); padding:10px 16px; }
-  .stage-char{ position:relative; width:88px; height:88px; flex:none; }
+  /* ステージ帯の高さは120pxで固定：タイピング表示（横長）⇔通常ポーズ（正方形）を
+     切り替えても帯の高さが変わらず、会話エリアが上下にガタつかない */
+  .stage-char{ position:relative; flex:1; min-width:0; height:120px; }
   /* キャラは原則として完全静止。動かす場合はポーズ絵の差し替えでのみ行う */
   .stage-char img,.stage-char svg,.stage-char video{ width:88px; height:88px; aspect-ratio:1/1; object-fit:cover; object-position:top; border-radius:12px; border:1px solid var(--line); background:#F3EDDD; display:block; }
+  /* タイピング表示は横向き構図（3:2）を帯状に全体表示する（切り取らず contain で見せる） */
+  .stage-char video.ly-anim,.stage-char img.ly-typing{ width:180px; height:120px; aspect-ratio:3/2; object-fit:contain; object-position:center; border:none; border-radius:0; background:transparent; }
   /* ステージ内のレイヤー（通常ポーズ／タイピングアニメ／タイピング静止画）を重ねて切り替える */
-  #stage-face{ position:relative; display:block; width:88px; height:88px; }
-  #stage-face .ly{ position:absolute; inset:0; }
+  #stage-face{ position:relative; display:block; width:100%; height:120px; }
+  #stage-face .ly{ position:absolute; left:0; top:50%; transform:translateY(-50%); }
   @keyframes blink{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
 
   /* ---------- 会話エリアだけがスクロールする ---------- */
@@ -180,8 +184,8 @@ function refreshStage(){
   if(charType === 'male'){
     face.innerHTML =
       '<span class="ly ly-idle"><img src="male.png" alt="" width="88" height="88"></span>' +
-      '<video class="ly ly-anim" src="male-typing-anim.webm" muted loop playsinline preload="auto" width="88" height="88" style="display:none"></video>' +
-      '<img class="ly ly-typing" src="male-typing.png" alt="" width="88" height="88" style="display:none">';
+      '<video class="ly ly-anim" src="male-typing-anim.webm" muted loop playsinline preload="auto" width="180" height="120" style="display:none"></video>' +
+      '<img class="ly ly-typing" src="male-typing.png" alt="" width="180" height="120" style="display:none">';
     probeAnimVideo(face.querySelector('video.ly-anim'));
   } else {
     face.innerHTML = '<span class="ly ly-idle">' + HIRO_SVG + '</span>';
@@ -363,8 +367,8 @@ function speakBtn(textToRead){
     chat.appendChild(wrap); scrollDown();
   });
 }
-/* タイピングアニメーション（male-typing-anim.webm：タイピングポーズと同じ構図のまま
-   手が動き・瞬きする透過WebM）と、フォールバック用のポーズ絵（male-typing.png）を用意する。
+/* タイピングアニメーション（male-typing-anim.webm：横向き構図で横顔のまま
+   両手がキーボードを打つ透過WebM）と、フォールバック用の静止画（male-typing.png・同じ横向き構図）を用意する。
    動画が使える環境では動画、使えない場合は静止画、どちらも無い場合は通常ポーズのまま（エラーにしない） */
 let typingImgOK = false;
 (function(){
