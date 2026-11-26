@@ -15,7 +15,7 @@
   #stage{ max-width:520px; margin:0 auto; display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--line); padding:10px 16px; }
   .stage-char{ position:relative; width:88px; height:88px; flex:none; }
   /* キャラは原則として完全静止。動かす場合はポーズ絵の差し替えでのみ行う */
-  .stage-char img,.stage-char svg{ width:88px; height:88px; aspect-ratio:1/1; object-fit:cover; object-position:top; border-radius:12px; border:1px solid var(--line); background:#F3EDDD; display:block; }
+  .stage-char img,.stage-char svg,.stage-char video{ width:88px; height:88px; aspect-ratio:1/1; object-fit:cover; object-position:top; border-radius:12px; border:1px solid var(--line); background:#F3EDDD; display:block; }
   @keyframes blink{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
 
   /* ---------- 会話エリアだけがスクロールする ---------- */
@@ -346,8 +346,9 @@ function speakBtn(textToRead){
     chat.appendChild(wrap); scrollDown();
   });
 }
-/* タイピングポーズ絵（male-typing.png）が配置されていれば読み込んでおく。
-   無い場合は差し替えを行わず、ステータス表示のみで動作する（エラーにしない） */
+/* タイピング動画（male-typing.mp4）とポーズ絵（male-typing.png）を事前に読み込んでおく。
+   動画が使える環境では動画に差し替え、使えない場合は静止画にフォールバックする。
+   どちらも無い場合は差し替えを行わず、ステータス表示のみで動作する（エラーにしない） */
 let typingImgOK = false;
 (function(){
   const im = new Image();
@@ -355,12 +356,40 @@ let typingImgOK = false;
   im.onerror = () => { typingImgOK = false; };
   im.src = 'male-typing.png';
 })();
+let typingVideoOK = false;
+(function(){
+  try{
+    const v = document.createElement('video');
+    if(!v.canPlayType || !v.canPlayType('video/mp4')) return;
+    v.preload = 'auto'; v.muted = true; v.src = 'male-typing.mp4';
+    v.addEventListener('canplay', () => { typingVideoOK = true; }, { once:true });
+    v.addEventListener('error', () => { typingVideoOK = false; }, { once:true });
+    v.load();
+  }catch(e){}
+})();
 
 async function workPose(ms){
   setStatusTyping();
-  const swapped = (charType === 'male' && typingImgOK);
-  if(swapped){
+  let swapped = false;
+  if(charType === 'male' && typingVideoOK){
+    const face = document.getElementById('stage-face');
+    face.innerHTML = '<video src="male-typing.mp4" autoplay muted loop playsinline preload="auto" width="88" height="88"></video>';
+    swapped = true;
+    const vid = face.querySelector('video');
+    try{
+      const p = vid.play();
+      if(p && p.catch) p.catch(() => {
+        /* 再生できない環境では静止画に差し替える */
+        if(typingImgOK) face.innerHTML = '<img src="male-typing.png" alt="" width="88" height="88">';
+        else refreshStage();
+      });
+    }catch(e){
+      if(typingImgOK) face.innerHTML = '<img src="male-typing.png" alt="" width="88" height="88">';
+      else refreshStage();
+    }
+  } else if(charType === 'male' && typingImgOK){
     document.getElementById('stage-face').innerHTML = '<img src="male-typing.png" alt="" width="88" height="88">';
+    swapped = true;
   }
   await wait(ms);
   if(swapped) refreshStage();
