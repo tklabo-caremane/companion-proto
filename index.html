@@ -16,6 +16,9 @@
   .stage-char{ position:relative; width:88px; height:88px; flex:none; }
   /* キャラは原則として完全静止。動かす場合はポーズ絵の差し替えでのみ行う */
   .stage-char img,.stage-char svg,.stage-char video{ width:88px; height:88px; aspect-ratio:1/1; object-fit:cover; object-position:top; border-radius:12px; border:1px solid var(--line); background:#F3EDDD; display:block; }
+  /* ステージ内のレイヤー（通常ポーズ／タイピングアニメ／タイピング静止画）を重ねて切り替える */
+  #stage-face{ position:relative; display:block; width:88px; height:88px; }
+  #stage-face .ly{ position:absolute; inset:0; }
   @keyframes blink{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
 
   /* ---------- 会話エリアだけがスクロールする ---------- */
@@ -170,8 +173,19 @@ function avatarHTML(){
   if(charType === 'male') return '<img src="male.png" alt="" width="88" height="88">';
   return HIRO_SVG;
 }
+/* ステージは3レイヤー重ね：通常ポーズ（ly-idle）／タイピングアニメ動画（ly-anim）／
+   動画が使えない環境向けのタイピング静止画（ly-typing）。表示切替は stageTyping() が行う */
 function refreshStage(){
-  document.getElementById('stage-face').innerHTML = avatarHTML();
+  const face = document.getElementById('stage-face');
+  if(charType === 'male'){
+    face.innerHTML =
+      '<span class="ly ly-idle"><img src="male.png" alt="" width="88" height="88"></span>' +
+      '<video class="ly ly-anim" src="male-typing-anim.webm" muted loop playsinline preload="auto" width="88" height="88" style="display:none"></video>' +
+      '<img class="ly ly-typing" src="male-typing.png" alt="" width="88" height="88" style="display:none">';
+    probeAnimVideo(face.querySelector('video.ly-anim'));
+  } else {
+    face.innerHTML = '<span class="ly ly-idle">' + HIRO_SVG + '</span>';
+  }
 }
 function selectChar(t){
   charType = t;
@@ -265,6 +279,8 @@ function typeInto(bubble, speed){
 
 /* ---------- 会話部品 ---------- */
 async function say(html, cls){
+  /* キャラが文章を出している間はタイピングアニメーション、出し終わったら通常ポーズに戻る */
+  stageTyping(true);
   const ind = document.createElement('div'); ind.className = 'msg';
   ind.innerHTML = `<div class="bubble typing"><span></span><span></span><span></span></div>`;
   chat.appendChild(ind); scrollDown();
@@ -277,6 +293,7 @@ async function say(html, cls){
   chat.appendChild(d); scrollDown();
   await typeInto(bub, 30);
   await wait(200);
+  stageTyping(false);
 }
 function sayCard(html){
   const d = document.createElement('div'); d.className = 'msg';
@@ -346,9 +363,9 @@ function speakBtn(textToRead){
     chat.appendChild(wrap); scrollDown();
   });
 }
-/* タイピング動画（male-typing.mp4）とポーズ絵（male-typing.png）を事前に読み込んでおく。
-   動画が使える環境では動画に差し替え、使えない場合は静止画にフォールバックする。
-   どちらも無い場合は差し替えを行わず、ステータス表示のみで動作する（エラーにしない） */
+/* タイピングアニメーション（male-typing-anim.webm：タイピングポーズと同じ構図のまま
+   手が動き・瞬きする透過WebM）と、フォールバック用のポーズ絵（male-typing.png）を用意する。
+   動画が使える環境では動画、使えない場合は静止画、どちらも無い場合は通常ポーズのまま（エラーにしない） */
 let typingImgOK = false;
 (function(){
   const im = new Image();
@@ -356,43 +373,71 @@ let typingImgOK = false;
   im.onerror = () => { typingImgOK = false; };
   im.src = 'male-typing.png';
 })();
-let typingVideoOK = false;
-(function(){
-  try{
-    const v = document.createElement('video');
-    if(!v.canPlayType || !v.canPlayType('video/mp4')) return;
-    v.preload = 'auto'; v.muted = true; v.src = 'male-typing.mp4';
-    v.addEventListener('canplay', () => { typingVideoOK = true; }, { once:true });
-    v.addEventListener('error', () => { typingVideoOK = false; }, { once:true });
-    v.load();
-  }catch(e){}
-})();
+/* 動画のアルファ（透過）が実際に効く環境かどうかを、隅のピクセルの透明度で判定する。
+   一部のブラウザはWebMの透過を無視して黒背景で描くため、その場合は動画を使わない */
+let typingAnimOK = false;
+function probeAnimVideo(vid){
+  if(!vid) return;
+  if(!vid.canPlayType || !vid.canPlayType('video/webm; codecs="vp9"')){ typingAnimOK = false; return; }
+  const mark = () => {
+    try{
+      const c = document.createElement('canvas');
+      c.width = 48; c.height = 48;
+      const ctx = c.getContext('2d');
+      if(!ctx){ typingAnimOK = true; return; }
+      ctx.drawImage(vid, 0, 0, 48, 48);
+      typingAnimOK = ctx.getImageData(1, 1, 1, 1).data[3] < 16;
+    }catch(e){ typingAnimOK = true; }
+  };
+  if(vid.readyState >= 3) mark();
+  else vid.addEventListener('canplay', mark, { once:true });
+  vid.addEventListener('error', () => { typingAnimOK = false; }, { once:true });
+}
+
+/* ステージの表示切替：
+   on=true  … キャラが文章を出している間・まとめ作業中 → タイピングアニメーション（無理なら静止画）
+   on=false … 利用者の入力・タップを待っている間 → 通常ポーズ */
+function stageTyping(on){
+  if(charType !== 'male') return;
+  const face = document.getElementById('stage-face');
+  const idle = face.querySelector('.ly-idle');
+  const anim = face.querySelector('video.ly-anim');
+  const still = face.querySelector('img.ly-typing');
+  if(!idle) return;
+  if(on){
+    if(anim && typingAnimOK){
+      idle.style.display = 'none';
+      if(still) still.style.display = 'none';
+      anim.style.display = 'block';
+      try{
+        const p = anim.play();
+        if(p && p.catch) p.catch(() => {
+          anim.style.display = 'none';
+          if(still && typingImgOK) still.style.display = 'block';
+          else idle.style.display = 'block';
+        });
+      }catch(e){
+        anim.style.display = 'none';
+        if(still && typingImgOK) still.style.display = 'block';
+        else idle.style.display = 'block';
+      }
+    } else if(still && typingImgOK){
+      idle.style.display = 'none';
+      if(anim) anim.style.display = 'none';
+      still.style.display = 'block';
+    }
+  } else {
+    if(anim){ try{ anim.pause(); }catch(e){} anim.style.display = 'none'; }
+    if(still) still.style.display = 'none';
+    idle.style.display = 'block';
+  }
+}
 
 async function workPose(ms){
   setStatusTyping();
-  let swapped = false;
-  if(charType === 'male' && typingVideoOK){
-    const face = document.getElementById('stage-face');
-    face.innerHTML = '<video src="male-typing.mp4" autoplay muted loop playsinline preload="auto" width="88" height="88"></video>';
-    swapped = true;
-    const vid = face.querySelector('video');
-    try{
-      const p = vid.play();
-      if(p && p.catch) p.catch(() => {
-        /* 再生できない環境では静止画に差し替える */
-        if(typingImgOK) face.innerHTML = '<img src="male-typing.png" alt="" width="88" height="88">';
-        else refreshStage();
-      });
-    }catch(e){
-      if(typingImgOK) face.innerHTML = '<img src="male-typing.png" alt="" width="88" height="88">';
-      else refreshStage();
-    }
-  } else if(charType === 'male' && typingImgOK){
-    document.getElementById('stage-face').innerHTML = '<img src="male-typing.png" alt="" width="88" height="88">';
-    swapped = true;
-  }
+  stageTyping(true);
   await wait(ms);
-  if(swapped) refreshStage();
+  stageTyping(false);
 }
 function showRestart(){ document.getElementById('restart').style.display = 'block'; scrollDown(); }
 
