@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>コンパニオン試作｜ケアマネ手帳</title>
+<style>
+  :root{ --teal:#0B7A68; --teal-dark:#075C4E; --cream:#FAF5EA; --card:#FFFFFF; --ink:#2B2B28; --muted:#8A8578; --line:#E7DFCE; --red:#C0392B; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body{ margin:0; font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif; background:var(--cream); color:var(--ink); }
+  header{ background:var(--teal); color:#fff; padding:14px 16px; position:sticky; top:0; z-index:5; }
+  header .t{ font-size:17px; font-weight:700; }
+  header .s{ font-size:12px; opacity:.85; margin-top:2px; }
+  main{ max-width:520px; margin:0 auto; padding:14px 12px 40px; }
+  .panel{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:14px; }
+  .panel h2{ font-size:14px; margin:0 0 10px; color:var(--teal-dark); }
+  .chars{ display:flex; gap:10px; }
+  .char{ flex:1; border:2px solid var(--line); border-radius:12px; padding:10px 6px; text-align:center; cursor:pointer; background:#fff; }
+  .char.sel{ border-color:var(--teal); background:#EFF7F4; }
+  .char img,.char svg{ width:72px; height:72px; object-fit:cover; object-position:top; border-radius:50%; background:#F3EDDD; }
+  .char .n{ font-size:14px; font-weight:700; margin-top:6px; }
+  .char .d{ font-size:11px; color:var(--muted); }
+  .flows{ display:flex; gap:10px; }
+  .flowbtn{ flex:1; border:none; border-radius:12px; padding:14px 8px; font-size:16px; font-weight:700; color:#fff; background:var(--teal); cursor:pointer; }
+  .flowbtn.sub{ background:#fff; color:var(--teal); border:2px solid var(--teal); }
+  .flowbtn:active{ opacity:.8; }
+  .progress{ display:none; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:12px; }
+  .progress .row{ display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px; }
+  .progress .row b{ color:var(--teal-dark); }
+  .bar{ height:8px; background:#EFE9D8; border-radius:99px; overflow:hidden; }
+  .bar i{ display:block; height:100%; width:0%; background:var(--teal); border-radius:99px; transition:width .4s; }
+  #chat{ display:flex; flex-direction:column; gap:10px; }
+  .msg{ display:flex; gap:8px; align-items:flex-start; animation:pop .25s ease; }
+  @keyframes pop{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:none;} }
+  .msg .av{ width:40px; height:40px; border-radius:50%; overflow:hidden; flex:none; border:2px solid var(--teal); background:#F3EDDD; }
+  .msg .av img,.msg .av svg{ width:100%; height:100%; object-fit:cover; object-position:top; }
+  .bubble{ background:var(--card); border:1px solid var(--line); border-radius:4px 14px 14px 14px; padding:10px 12px; font-size:15px; line-height:1.55; max-width:82%; white-space:pre-wrap; }
+  .bubble .red{ color:var(--red); font-weight:700; }
+  .bubble.draft{ background:#FFFDF4; border-style:dashed; font-size:14px; }
+  .me{ display:flex; justify-content:flex-end; animation:pop .25s ease; }
+  .me .b{ background:var(--teal); color:#fff; border-radius:14px 4px 14px 14px; padding:9px 12px; font-size:15px; max-width:82%; }
+  .done-item{ display:flex; align-items:center; gap:8px; background:#EFF7F4; border:1px solid #CFE6DE; color:var(--teal-dark); border-radius:10px; padding:7px 10px; font-size:13px; animation:pop .25s ease; }
+  .done-item .ck{ font-weight:700; }
+  .choices{ display:flex; flex-wrap:wrap; gap:8px; margin:2px 0 4px 48px; animation:pop .25s ease; }
+  .choices button{ border:2px solid var(--teal); background:#fff; color:var(--teal-dark); font-size:15px; font-weight:700; border-radius:99px; padding:9px 16px; cursor:pointer; }
+  .choices button.primary{ background:var(--teal); color:#fff; }
+  .choices button:active{ opacity:.75; }
+  .todo-form{ margin-left:48px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px; animation:pop .25s ease; }
+  .todo-form input{ width:100%; font-size:16px; padding:10px; border:1px solid var(--line); border-radius:8px; margin-bottom:8px; }
+  .chips{ display:flex; gap:8px; margin-bottom:10px; }
+  .chips button{ border:2px solid var(--line); background:#fff; border-radius:99px; padding:6px 14px; font-size:14px; cursor:pointer; }
+  .chips button.sel{ border-color:var(--teal); background:#EFF7F4; color:var(--teal-dark); font-weight:700; }
+  .todo-form .add{ width:100%; border:none; background:var(--teal); color:#fff; font-size:15px; font-weight:700; border-radius:10px; padding:11px; cursor:pointer; }
+  .speak{ margin-left:48px; }
+  .speak button{ border:2px solid var(--teal); background:#EFF7F4; color:var(--teal-dark); border-radius:99px; padding:8px 16px; font-size:14px; font-weight:700; cursor:pointer; }
+  .restart{ display:none; width:100%; margin-top:18px; border:2px solid var(--teal); background:#fff; color:var(--teal-dark); font-size:15px; font-weight:700; border-radius:12px; padding:12px; cursor:pointer; }
+  .note{ font-size:12px; color:var(--muted); text-align:center; margin-top:16px; line-height:1.6; }
+</style>
+</head>
+<body>
+<header>
+  <div class="t">コンパニオン試作</div>
+  <div class="s">ケアマネ手帳 ― 会話形式で仕事画面につなぐ試作です</div>
+</header>
+<main>
+  <div class="panel" id="setup">
+    <h2>① 相手を選んでください</h2>
+    <div class="chars">
+      <div class="char sel" id="char-male" onclick="selectChar('male')">
+        <img src="male.png" alt="男性キャラ">
+        <div class="n">男性キャラ</div><div class="d">同僚みたいな存在</div>
+      </div>
+      <div class="char" id="char-hiro" onclick="selectChar('hiro')">
+        <span id="hiro-thumb"></span>
+        <div class="n">ヒロ</div><div class="d">丁寧な案内役</div>
+      </div>
+    </div>
+    <h2 style="margin-top:16px;">② 流れを選んでください</h2>
+    <div class="flows">
+      <button class="flowbtn" onclick="startMorning()">☀ 朝の流れ</button>
+      <button class="flowbtn sub" onclick="startEvening()">🌙 夕の流れ</button>
+    </div>
+  </div>
+
+  <div class="progress" id="progress">
+    <div class="row"><span id="prog-text">全4件</span><b id="prog-rest">あと4件</b></div>
+    <div class="bar"><i id="prog-bar"></i></div>
+  </div>
+
+  <div id="chat"></div>
+  <button class="restart" id="restart" onclick="location.reload()">↺ 最初から試す</button>
+  <p class="note">これは様子見のための試作です。本番アプリには入っていません。<br>例に出てくる名前はすべて架空のものです。</p>
+</main>
+
+<script>
+const HIRO_SVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100" height="100" fill="#F3EDDD"/>
+  <path d="M50 96 L50 78 C38 74 30 82 28 96 Z" fill="#0B7A68"/>
+  <path d="M50 96 L50 78 C62 74 70 82 72 96 Z" fill="#0B7A68"/>
+  <rect x="44" y="66" width="12" height="12" fill="#F6CFAF"/>
+  <path d="M50 70 L44 78 L50 88 L56 78 Z" fill="#FFFFFF"/>
+  <circle cx="50" cy="46" r="21" fill="#FBD9B8"/>
+  <path d="M27 50 C25 22 38 12 50 12 C62 12 75 22 73 50 C73 56 71 60 69 62 C68 46 64 34 58 30 C64 40 63 30 50 28 C38 30 33 38 31 62 C29 60 27 56 27 50 Z" fill="#4A3226"/>
+  <circle cx="42" cy="47" r="2.4" fill="#2B2B28"/><circle cx="58" cy="47" r="2.4" fill="#2B2B28"/>
+  <path d="M45 58 Q50 61 55 58" stroke="#B4654A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+  <circle cx="35" cy="54" r="3" fill="#F5A58E" opacity=".55"/><circle cx="65" cy="54" r="3" fill="#F5A58E" opacity=".55"/>
+</svg>`;
+
+let charType = 'male';
+document.getElementById('hiro-thumb').innerHTML = HIRO_SVG;
+
+function avatarHTML(){
+  if(charType === 'male') return '<img src="male.png" alt="">';
+  return HIRO_SVG;
+}
+function selectChar(t){
+  charType = t;
+  document.getElementById('char-male').classList.toggle('sel', t==='male');
+  document.getElementById('char-hiro').classList.toggle('sel', t==='hiro');
+}
+
+const chat = document.getElementById('chat');
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function scrollDown(){ window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'}); }
+
+async function say(text, cls){
+  await wait(550);
+  const d = document.createElement('div'); d.className = 'msg';
+  d.innerHTML = `<div class="av">${avatarHTML()}</div><div class="bubble${cls?' '+cls:''}">${text}</div>`;
+  chat.appendChild(d); scrollDown();
+  await wait(350);
+}
+function me(text){
+  const d = document.createElement('div'); d.className = 'me';
+  d.innerHTML = `<div class="b">${text}</div>`;
+  chat.appendChild(d); scrollDown();
+}
+function doneItem(text){
+  const d = document.createElement('div'); d.className = 'done-item';
+  d.innerHTML = `<span class="ck">✓</span><span>${text}</span>`;
+  chat.appendChild(d); scrollDown();
+}
+function choices(list){
+  return new Promise(resolve => {
+    const wrap = document.createElement('div'); wrap.className = 'choices';
+    list.forEach((c, i) => {
+      const b = document.createElement('button');
+      b.textContent = c.label; if(i===0) b.className = 'primary';
+      b.onclick = () => { me(c.label); wrap.remove(); resolve(c.value); };
+      wrap.appendChild(b);
+    });
+    chat.appendChild(wrap); scrollDown();
+  });
+}
+function speakBtn(textToRead){
+  return new Promise(resolve => {
+    const wrap = document.createElement('div'); wrap.className = 'choices speak';
+    const b = document.createElement('button'); b.textContent = '🔊 読み上げ';
+    const next = document.createElement('button'); next.textContent = '次へ'; next.className = 'primary';
+    b.onclick = () => {
+      try{
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(textToRead);
+        u.lang = 'ja-JP'; u.rate = 1.0;
+        speechSynthesis.speak(u);
+      }catch(e){}
+    };
+    next.onclick = () => { try{ speechSynthesis.cancel(); }catch(e){} wrap.remove(); resolve(); };
+    wrap.appendChild(b); wrap.appendChild(next);
+    chat.appendChild(wrap); scrollDown();
+  });
+}
+function showRestart(){ document.getElementById('restart').style.display = 'block'; scrollDown(); }
+function lockSetup(){ document.getElementById('setup').style.opacity = '.55'; document.getElementById('setup').style.pointerEvents = 'none'; }
+
+/* ---------- 朝の流れ ---------- */
+async function startMorning(){
+  lockSetup();
+  await say('おはようございます。今日の予定を確認しましょう。');
+  await say('今日の予定は、訪問が2件、電話が1件です。\n10時から山田さんのお宅へ訪問、13時に高橋さんへ電話、15時から佐藤さんのお宅へ訪問です。');
+  await speakBtn('今日の予定は、訪問が2件、電話が1件です。10時から山田さんのお宅へ訪問、13時に高橋さんへ電話、15時から佐藤さんのお宅へ訪問です。');
+  await say('あと、<span class="red">期限切れが2件</span>あります。このまま放っておくと申請が遅れてしまいます。');
+  const v = await choices([
+    {label:'期限切れを見る', value:'overdue'},
+    {label:'今日の予定を開く', value:'today'},
+    {label:'あとで', value:'later'}
+  ]);
+  if(v === 'overdue') await say('期限切れの2件を開きます。（試作ではここまでです）');
+  if(v === 'today') await say('今日の予定を開きます。（試作ではここまでです）');
+  if(v === 'later') await say('分かりました。あとでまた声をかけますね。');
+  await say('朝の確認は以上です。いってらっしゃい。');
+  showRestart();
+}
+
+/* ---------- 夕の流れ ---------- */
+let totalItems = 4, doneCount = 0;
+function updateProgress(){
+  document.getElementById('prog-text').textContent = `全${totalItems}件`;
+  document.getElementById('prog-rest').textContent = `あと${totalItems - doneCount}件`;
+  document.getElementById('prog-bar').style.width = (doneCount/totalItems*100) + '%';
+}
+async function finishItem(label){
+  doneCount++; updateProgress();
+  await wait(250); doneItem(label);
+}
+
+async function startEvening(){
+  lockSetup();
+  const p = document.getElementById('progress'); p.style.display = 'block'; updateProgress();
+  await say('お疲れさまでした。今日の入力を一緒に片付けましょう。全部で4件あります。1件ずつ聞いていきますね。');
+
+  /* 件1：山田さん モニタリング */
+  await say('山田さんのモニタリング、今日は完了にしますか？');
+  let v = await choices([{label:'完了にする', value:'done'}, {label:'してない', value:'no'}]);
+  await finishItem(v === 'done' ? '山田さん モニタリング完了' : '山田さん モニタリングは未完了のまま');
+  await say(v === 'done' ? '記録しました。' : '分かりました。そのまま残しておきます。');
+
+  /* 件2：高橋さん 支援経過の下書き */
+  await say('高橋さんの支援経過の下書きができています。内容を確認しますか？');
+  v = await choices([{label:'確認する', value:'see'}, {label:'あとで', value:'later'}]);
+  if(v === 'see'){
+    await say('自宅訪問しモニタリング実施。本人より「調子は安定している」との話あり。次月利用表を本人に確認後、署名いただく。', 'draft');
+    v = await choices([{label:'記録する', value:'rec'}, {label:'直したい', value:'edit'}]);
+    await finishItem(v === 'rec' ? '高橋さん 支援経過を記録' : '高橋さん 支援経過は下書きのまま');
+    await say(v === 'rec' ? '記録しました。' : '下書きのまま残しておきます。あとで直せます。');
+  } else {
+    await finishItem('高橋さん 支援経過は下書きのまま');
+    await say('分かりました。下書きのまま残しておきます。');
+  }
+
+  /* 件3：佐藤さん モニタリング */
+  await say('佐藤さんのモニタリング、今日は完了にしますか？');
+  v = await choices([{label:'完了にする', value:'done'}, {label:'してない', value:'no'}]);
+  await finishItem(v === 'done' ? '佐藤さん モニタリング完了' : '佐藤さん モニタリングは未完了のまま');
+  await say(v === 'done' ? '記録しました。' : '分かりました。そのまま残しておきます。');
+
+  /* 件4：今日発生したtodo */
+  await say('最後です。今日、電話や訪問で発生したtodoはありますか？');
+  const todo = await todoForm();
+  if(todo){
+    await finishItem(`todo追加：${todo.text}（期限：${todo.due}）`);
+    await say('追加しました。');
+  } else {
+    await finishItem('今日発生したtodoはなし');
+    await say('分かりました。');
+  }
+
+  await say('全部終わりました。お疲れさまでした。ゆっくり休んでくださいね。');
+  showRestart();
+}
+
+function todoForm(){
+  return new Promise(resolve => {
+    const wrap = document.createElement('div'); wrap.className = 'todo-form';
+    wrap.innerHTML = `
+      <input type="text" placeholder="todoを1行で入力" id="todo-input">
+      <div class="chips">
+        <button data-due="明日" class="sel">明日</button>
+        <button data-due="来週">来週</button>
+        <button data-due="なし">なし</button>
+      </div>
+      <button class="add" id="todo-add">追加する</button>
+      <button class="add" id="todo-none" style="background:#fff;color:var(--teal-dark);border:2px solid var(--line);margin-top:8px;">今日はなし</button>`;
+    chat.appendChild(wrap); scrollDown();
+    let due = '明日';
+    wrap.querySelectorAll('.chips button').forEach(b => {
+      b.onclick = () => { wrap.querySelectorAll('.chips button').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); due = b.dataset.due; };
+    });
+    wrap.querySelector('#todo-add').onclick = () => {
+      const text = wrap.querySelector('#todo-input').value.trim();
+      if(!text){ wrap.querySelector('#todo-input').focus(); return; }
+      me(text + '（期限：' + due + '）'); wrap.remove(); resolve({text, due});
+    };
+    wrap.querySelector('#todo-none').onclick = () => { me('今日はなし'); wrap.remove(); resolve(null); };
+  });
+}
+</script>
+</body>
+</html>
