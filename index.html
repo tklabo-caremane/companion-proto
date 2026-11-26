@@ -161,6 +161,11 @@ const HIRO_SVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
 
 const CHAR_NAMES = { male:'男性キャラ', hiro:'ヒロ' };
 
+/* タイピング表示の可否フラグ（キャラ別）。refreshStage() がスクリプト前半で
+   probeAnimVideo() を呼ぶため、宣言はここ（初回呼び出しより前）に置く */
+const typingImgOK = { male:false, hiro:false };
+const typingAnimOK = { male:false, hiro:false };
+
 /* ---------- 設定（キャラ＋流れ上書き）。メイン画面には出さず、歯車からのシート内だけで変える ---------- */
 let settings = { char:'male', flow:'auto' };
 try{
@@ -186,10 +191,13 @@ function refreshStage(){
       '<span class="ly ly-idle"><img src="male.png" alt="" width="88" height="88"></span>' +
       '<video class="ly ly-anim" src="male-typing-anim.webm" muted loop playsinline preload="auto" width="180" height="120" style="display:none"></video>' +
       '<img class="ly ly-typing" src="male-typing.png" alt="" width="180" height="120" style="display:none">';
-    probeAnimVideo(face.querySelector('video.ly-anim'));
   } else {
-    face.innerHTML = '<span class="ly ly-idle">' + HIRO_SVG + '</span>';
+    face.innerHTML =
+      '<span class="ly ly-idle">' + HIRO_SVG + '</span>' +
+      '<video class="ly ly-anim" src="hiro-typing-anim.webm" muted loop playsinline preload="auto" width="180" height="120" style="display:none"></video>' +
+      '<img class="ly ly-typing" src="hiro-typing.png" alt="" width="180" height="120" style="display:none">';
   }
+  probeAnimVideo(face.querySelector('video.ly-anim'), charType);
 }
 function selectChar(t){
   charType = t;
@@ -367,49 +375,47 @@ function speakBtn(textToRead){
     chat.appendChild(wrap); scrollDown();
   });
 }
-/* タイピングアニメーション（male-typing-anim.webm：横向き構図で横顔のまま
-   両手がキーボードを打つ透過WebM）と、フォールバック用の静止画（male-typing.png・同じ横向き構図）を用意する。
+/* タイピングアニメーション（キャラ別：male-typing-anim.webm／hiro-typing-anim.webm。
+   どちらも横向き構図で横顔のまま両手がキーボードを打つ透過WebM）と、
+   フォールバック用の静止画（male-typing.png／hiro-typing.png・同じ横向き構図）を用意する。
    動画が使える環境では動画、使えない場合は静止画、どちらも無い場合は通常ポーズのまま（エラーにしない） */
-let typingImgOK = false;
-(function(){
+[['male', 'male-typing.png'], ['hiro', 'hiro-typing.png']].forEach(([key, src]) => {
   const im = new Image();
-  im.onload = () => { typingImgOK = true; };
-  im.onerror = () => { typingImgOK = false; };
-  im.src = 'male-typing.png';
-})();
+  im.onload = () => { typingImgOK[key] = true; };
+  im.onerror = () => { typingImgOK[key] = false; };
+  im.src = src;
+});
 /* 動画のアルファ（透過）が実際に効く環境かどうかを、隅のピクセルの透明度で判定する。
    一部のブラウザはWebMの透過を無視して黒背景で描くため、その場合は動画を使わない */
-let typingAnimOK = false;
-function probeAnimVideo(vid){
+function probeAnimVideo(vid, key){
   if(!vid) return;
-  if(!vid.canPlayType || !vid.canPlayType('video/webm; codecs="vp9"')){ typingAnimOK = false; return; }
+  if(!vid.canPlayType || !vid.canPlayType('video/webm; codecs="vp9"')){ typingAnimOK[key] = false; return; }
   const mark = () => {
     try{
       const c = document.createElement('canvas');
       c.width = 48; c.height = 48;
       const ctx = c.getContext('2d');
-      if(!ctx){ typingAnimOK = true; return; }
+      if(!ctx){ typingAnimOK[key] = true; return; }
       ctx.drawImage(vid, 0, 0, 48, 48);
-      typingAnimOK = ctx.getImageData(1, 1, 1, 1).data[3] < 16;
-    }catch(e){ typingAnimOK = true; }
+      typingAnimOK[key] = ctx.getImageData(1, 1, 1, 1).data[3] < 16;
+    }catch(e){ typingAnimOK[key] = true; }
   };
   if(vid.readyState >= 3) mark();
   else vid.addEventListener('canplay', mark, { once:true });
-  vid.addEventListener('error', () => { typingAnimOK = false; }, { once:true });
+  vid.addEventListener('error', () => { typingAnimOK[key] = false; }, { once:true });
 }
 
 /* ステージの表示切替：
    on=true  … キャラが文章を出している間・まとめ作業中 → タイピングアニメーション（無理なら静止画）
    on=false … 利用者の入力・タップを待っている間 → 通常ポーズ */
 function stageTyping(on){
-  if(charType !== 'male') return;
   const face = document.getElementById('stage-face');
   const idle = face.querySelector('.ly-idle');
   const anim = face.querySelector('video.ly-anim');
   const still = face.querySelector('img.ly-typing');
   if(!idle) return;
   if(on){
-    if(anim && typingAnimOK){
+    if(anim && typingAnimOK[charType]){
       idle.style.display = 'none';
       if(still) still.style.display = 'none';
       anim.style.display = 'block';
@@ -417,15 +423,15 @@ function stageTyping(on){
         const p = anim.play();
         if(p && p.catch) p.catch(() => {
           anim.style.display = 'none';
-          if(still && typingImgOK) still.style.display = 'block';
+          if(still && typingImgOK[charType]) still.style.display = 'block';
           else idle.style.display = 'block';
         });
       }catch(e){
         anim.style.display = 'none';
-        if(still && typingImgOK) still.style.display = 'block';
+        if(still && typingImgOK[charType]) still.style.display = 'block';
         else idle.style.display = 'block';
       }
-    } else if(still && typingImgOK){
+    } else if(still && typingImgOK[charType]){
       idle.style.display = 'none';
       if(anim) anim.style.display = 'none';
       still.style.display = 'block';
