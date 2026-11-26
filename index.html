@@ -16,19 +16,8 @@
   /* ---------- キャラ常駐ステージ ---------- */
   #stage{ display:flex; align-items:center; gap:14px; background:#fff; border-bottom:1px solid var(--line); padding:10px 16px; }
   .stage-char{ position:relative; width:88px; height:88px; flex:none; }
-  .stage-char img,.stage-char svg{ width:88px; height:88px; object-fit:cover; object-position:top; border-radius:16px; border:2px solid var(--teal); background:#F3EDDD; display:block; animation:breathe 3.4s ease-in-out infinite; transform-origin:50% 85%; }
-  /* 常時：呼吸のような穏やかなアイドル動作 */
-  @keyframes breathe{ 0%,100%{ transform:translateY(0) scale(1);} 50%{ transform:translateY(2px) scale(1.018);} }
-  /* 喋っている間：小さな頷き */
-  #stage.talking .stage-char img,#stage.talking .stage-char svg{ animation:talk .42s ease-in-out infinite alternate; }
-  @keyframes talk{ from{ transform:translateY(0) rotate(-1.1deg);} to{ transform:translateY(3px) rotate(1.1deg);} }
-  /* まとめ作業中：大きく速くタイピング動作 */
-  #stage.working .stage-char img,#stage.working .stage-char svg{ animation:typing .2s ease-in-out infinite alternate; }
-  @keyframes typing{ from{ transform:translateY(0) rotate(-1.6deg);} to{ transform:translateY(4.5px) rotate(1.6deg);} }
-  .laptop{ position:absolute; left:50%; bottom:-14px; transform:translateX(-50%) translateY(8px) scale(.7); opacity:0; transition:all .3s ease; pointer-events:none; z-index:2; }
-  #stage.working .laptop{ opacity:1; transform:translateX(-50%) translateY(0) scale(1.25); }
-  .laptop .scr-dot{ animation:blink 0.9s infinite; }
-  .laptop .scr-dot.d2{ animation-delay:.3s; } .laptop .scr-dot.d3{ animation-delay:.6s; }
+  /* キャラは原則として完全静止。動かす場合はポーズ絵の差し替えでのみ行う */
+  .stage-char img,.stage-char svg{ width:88px; height:88px; object-fit:cover; object-position:top; border-radius:16px; border:2px solid var(--teal); background:#F3EDDD; display:block; }
   @keyframes blink{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
   .stage-info{ flex:1; min-width:0; }
   .stage-name{ font-size:16px; font-weight:700; color:var(--teal-dark); }
@@ -96,17 +85,6 @@
   <div id="stage">
     <div class="stage-char">
       <span id="stage-face"></span>
-      <svg class="laptop" width="72" height="50" viewBox="0 0 72 50" xmlns="http://www.w3.org/2000/svg">
-        <rect x="8" y="2" width="56" height="36" rx="4" fill="#3A3F44"/>
-        <rect x="12" y="6" width="48" height="28" rx="2" fill="#BFE8DC"/>
-        <circle class="scr-dot" cx="22" cy="14" r="3" fill="#0B7A68"/>
-        <circle class="scr-dot d2" cx="34" cy="14" r="3" fill="#0B7A68"/>
-        <circle class="scr-dot d3" cx="46" cy="14" r="3" fill="#0B7A68"/>
-        <rect x="16" y="24" width="34" height="3.4" rx="1.7" fill="#0B7A68" opacity=".65"/>
-        <rect x="16" y="29" width="24" height="3.4" rx="1.7" fill="#0B7A68" opacity=".45"/>
-        <path d="M2 44 L70 44 L64 38 L8 38 Z" fill="#565D63"/>
-        <rect x="28" y="40" width="16" height="2.4" rx="1.2" fill="#3A3F44"/>
-      </svg>
     </div>
     <div class="stage-info">
       <div class="stage-name" id="stage-name">男性キャラ</div>
@@ -238,9 +216,7 @@ async function say(html, cls){
   bub.innerHTML = html;
   d.appendChild(bub);
   chat.appendChild(d); scrollDown();
-  stage.classList.add('talking');
   await typeInto(bub, 30);
-  stage.classList.remove('talking');
   await wait(200);
 }
 function sayCard(html){
@@ -311,10 +287,24 @@ function speakBtn(textToRead){
     chat.appendChild(wrap); scrollDown();
   });
 }
+/* タイピングポーズ絵（male-typing.png）が配置されていれば読み込んでおく。
+   無い場合は差し替えを行わず、ステータス表示のみで動作する（エラーにしない） */
+let typingImgOK = false;
+(function(){
+  const im = new Image();
+  im.onload = () => { typingImgOK = true; };
+  im.onerror = () => { typingImgOK = false; };
+  im.src = 'male-typing.png';
+})();
+
 async function workPose(ms){
-  stage.classList.add('working'); setStatusTyping();
+  setStatusTyping();
+  const swapped = (charType === 'male' && typingImgOK);
+  if(swapped){
+    document.getElementById('stage-face').innerHTML = '<img src="male-typing.png" alt="">';
+  }
   await wait(ms);
-  stage.classList.remove('working');
+  if(swapped) refreshStage();
 }
 function showRestart(){ document.getElementById('restart').style.display = 'block'; scrollDown(); }
 function lockSetup(){ document.getElementById('setup').style.opacity = '.55'; document.getElementById('setup').style.pointerEvents = 'none'; }
