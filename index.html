@@ -16,11 +16,17 @@
   /* ---------- キャラ常駐ステージ ---------- */
   #stage{ display:flex; align-items:center; gap:14px; background:#fff; border-bottom:1px solid var(--line); padding:10px 16px; }
   .stage-char{ position:relative; width:88px; height:88px; flex:none; }
-  .stage-char img,.stage-char svg{ width:88px; height:88px; object-fit:cover; object-position:top; border-radius:16px; border:2px solid var(--teal); background:#F3EDDD; display:block; }
-  #stage.working .stage-char img,#stage.working .stage-char svg{ animation:bob .28s ease-in-out infinite alternate; }
-  @keyframes bob{ from{ transform:translateY(0);} to{ transform:translateY(2.5px);} }
-  .laptop{ position:absolute; left:50%; bottom:-10px; transform:translateX(-50%) translateY(6px) scale(.7); opacity:0; transition:all .3s ease; pointer-events:none; }
-  #stage.working .laptop{ opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+  .stage-char img,.stage-char svg{ width:88px; height:88px; object-fit:cover; object-position:top; border-radius:16px; border:2px solid var(--teal); background:#F3EDDD; display:block; animation:breathe 3.4s ease-in-out infinite; transform-origin:50% 85%; }
+  /* 常時：呼吸のような穏やかなアイドル動作 */
+  @keyframes breathe{ 0%,100%{ transform:translateY(0) scale(1);} 50%{ transform:translateY(2px) scale(1.018);} }
+  /* 喋っている間：小さな頷き */
+  #stage.talking .stage-char img,#stage.talking .stage-char svg{ animation:talk .42s ease-in-out infinite alternate; }
+  @keyframes talk{ from{ transform:translateY(0) rotate(-1.1deg);} to{ transform:translateY(3px) rotate(1.1deg);} }
+  /* まとめ作業中：大きく速くタイピング動作 */
+  #stage.working .stage-char img,#stage.working .stage-char svg{ animation:typing .2s ease-in-out infinite alternate; }
+  @keyframes typing{ from{ transform:translateY(0) rotate(-1.6deg);} to{ transform:translateY(4.5px) rotate(1.6deg);} }
+  .laptop{ position:absolute; left:50%; bottom:-14px; transform:translateX(-50%) translateY(8px) scale(.7); opacity:0; transition:all .3s ease; pointer-events:none; z-index:2; }
+  #stage.working .laptop{ opacity:1; transform:translateX(-50%) translateY(0) scale(1.25); }
   .laptop .scr-dot{ animation:blink 0.9s infinite; }
   .laptop .scr-dot.d2{ animation-delay:.3s; } .laptop .scr-dot.d3{ animation-delay:.6s; }
   @keyframes blink{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
@@ -51,11 +57,9 @@
 
   /* ---------- LINE風チャット ---------- */
   #chat{ display:flex; flex-direction:column; gap:10px; }
-  .msg{ display:flex; gap:8px; align-items:flex-start; animation:pop .25s ease; }
+  .msg{ display:flex; align-items:flex-start; animation:pop .25s ease; }
   @keyframes pop{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:none;} }
-  .msg .av{ width:40px; height:40px; border-radius:50%; overflow:hidden; flex:none; border:2px solid var(--teal); background:#F3EDDD; }
-  .msg .av img,.msg .av svg{ width:100%; height:100%; object-fit:cover; object-position:top; }
-  .bubble{ background:var(--card); border:1px solid var(--line); border-radius:4px 14px 14px 14px; padding:10px 12px; font-size:15px; line-height:1.55; max-width:82%; white-space:pre-wrap; cursor:pointer; }
+  .bubble{ background:var(--card); border:1px solid var(--line); border-radius:4px 14px 14px 14px; padding:10px 12px; font-size:15px; line-height:1.55; max-width:88%; white-space:pre-wrap; cursor:pointer; }
   .bubble .red{ color:var(--red); font-weight:700; }
   .bubble.draft{ background:#FFFDF4; border-style:dashed; font-size:14px; }
   .bubble.typing{ display:flex; gap:4px; align-items:center; padding:14px 12px; cursor:default; }
@@ -70,15 +74,15 @@
   .me .b{ background:var(--teal); color:#fff; border-radius:14px 4px 14px 14px; padding:9px 12px; font-size:15px; max-width:82%; white-space:pre-wrap; }
   .done-item{ display:flex; align-items:center; gap:8px; background:#EFF7F4; border:1px solid #CFE6DE; color:var(--teal-dark); border-radius:10px; padding:7px 10px; font-size:13px; animation:pop .25s ease; }
   .done-item .ck{ font-weight:700; }
-  .choices{ display:flex; flex-wrap:wrap; gap:8px; margin:2px 0 4px 48px; animation:pop .25s ease; }
+  .choices{ display:flex; flex-wrap:wrap; gap:8px; margin:2px 0 4px 0; animation:pop .25s ease; }
   .choices button{ border:2px solid var(--teal); background:#fff; color:var(--teal-dark); font-size:15px; font-weight:700; border-radius:99px; padding:9px 16px; cursor:pointer; }
   .choices button.primary{ background:var(--teal); color:#fff; }
   .choices button:active{ opacity:.75; }
-  .todo-form{ margin-left:48px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px; animation:pop .25s ease; }
+  .todo-form{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px; animation:pop .25s ease; }
   .todo-form input{ width:100%; font-size:16px; padding:10px; border:1px solid var(--line); border-radius:8px; margin-bottom:8px; }
   .todo-form .add{ width:100%; border:none; background:var(--teal); color:#fff; font-size:15px; font-weight:700; border-radius:10px; padding:11px; cursor:pointer; }
   .todo-form .none{ width:100%; background:#fff; color:var(--teal-dark); border:2px solid var(--line); font-size:15px; font-weight:700; border-radius:10px; padding:11px; cursor:pointer; margin-top:8px; }
-  .speak{ margin-left:48px; }
+  .speak{ margin-left:0; }
   .restart{ display:none; width:100%; margin-top:18px; border:2px solid var(--teal); background:#fff; color:var(--teal-dark); font-size:15px; font-weight:700; border-radius:12px; padding:12px; cursor:pointer; }
   .note{ font-size:12px; color:var(--muted); text-align:center; margin-top:16px; line-height:1.6; }
 </style>
@@ -225,22 +229,23 @@ function typeInto(bubble, speed){
 /* ---------- 会話部品 ---------- */
 async function say(html, cls){
   const ind = document.createElement('div'); ind.className = 'msg';
-  ind.innerHTML = `<div class="av">${avatarHTML()}</div><div class="bubble typing"><span></span><span></span><span></span></div>`;
+  ind.innerHTML = `<div class="bubble typing"><span></span><span></span><span></span></div>`;
   chat.appendChild(ind); scrollDown();
   await wait(480);
   ind.remove();
   const d = document.createElement('div'); d.className = 'msg';
-  const av = document.createElement('div'); av.className = 'av'; av.innerHTML = avatarHTML();
   const bub = document.createElement('div'); bub.className = 'bubble' + (cls ? ' ' + cls : '');
   bub.innerHTML = html;
-  d.appendChild(av); d.appendChild(bub);
+  d.appendChild(bub);
   chat.appendChild(d); scrollDown();
+  stage.classList.add('talking');
   await typeInto(bub, 30);
+  stage.classList.remove('talking');
   await wait(200);
 }
 function sayCard(html){
   const d = document.createElement('div'); d.className = 'msg';
-  d.innerHTML = `<div class="av">${avatarHTML()}</div><div class="bubble card">${html}</div>`;
+  d.innerHTML = `<div class="bubble card">${html}</div>`;
   chat.appendChild(d); scrollDown();
 }
 function me(text){
@@ -404,18 +409,33 @@ const DUE_WORDS = [
   { re:/来月/, label:'来月' }
 ];
 function parseTodo(text){
-  let rest = text, person = null, due = null;
+  let rest = text.replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+  let person = null, due = null, pastDate = false;
   for(const name of ROSTER){
     if(rest.includes(name)){ person = name; break; }
   }
-  if(person) rest = rest.replace(new RegExp(person + 'さん?'), ' ');
+  if(person) rest = rest.replace(new RegExp(person + '(さん|様)?', 'g'), ' ');
+  /* 月日表記（11/12、11月12日）は期限候補として拾い、内容からは必ず除く */
+  let dateLabel = null;
+  const dm = rest.match(/(\d{1,2})[/／](\d{1,2})/) || rest.match(/(\d{1,2})月(\d{1,2})日/);
+  if(dm){
+    const mo = parseInt(dm[1], 10), dy = parseInt(dm[2], 10);
+    dateLabel = mo + '/' + dy;
+    rest = rest.replace(dm[0], ' ');
+    const now = new Date();
+    const cand = new Date(now.getFullYear(), mo - 1, dy);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    pastDate = cand < today;
+  }
   for(const d of DUE_WORDS){
     if(d.re.test(rest)){ due = d.label; rest = rest.replace(d.re, ' '); break; }
   }
+  if(!due && dateLabel){ due = dateLabel; }
+  else { pastDate = false; } /* 期限が言葉で決まった場合、日付は除去のみで過去確認はしない */
   let content = rest.replace(/[\s　]+/g, ' ').trim();
-  content = content.split(' ').filter(tok => !/^(さん|様|に|へ|を|の|と)$/.test(tok)).join(' ');
-  content = content.replace(/^(に|へ)(?=\S)/, '').replace(/(、|。)+$/, '').trim();
-  return { person, due, content };
+  content = content.split(' ').filter(tok => !/^(さん|様|に|へ|を|の|と|まで)$/.test(tok)).join(' ');
+  content = content.replace(/^(までに|まで|に|へ)(?=\S)/, '').replace(/(、|。)+$/, '').trim();
+  return { person, due, content, pastDate };
 }
 function todoCardHTML(t){
   return `<div class="ct">TODO（まとめました）</div>
@@ -446,6 +466,17 @@ async function todoCapture(){
   if(t.content) picked.push(`内容は「${t.content}」`);
   if(picked.length) await say('受け取りました。' + picked.join('、') + 'ですね。');
 
+  /* 月日表記が過去だったら、勝手に確定せず確認する */
+  if(t.pastDate){
+    await say(`期限の${t.due}は、今日より前の日付です。過ぎていますが、この日付でいいですか？`);
+    const ok = await choices([
+      {label:'この日付でいい', value:'keep'},
+      {label:'選び直す', value:'re'}
+    ]);
+    if(ok === 're'){ t.due = await askDue(); }
+    t.pastDate = false;
+  }
+
   while(true){
     if(!t.person){
       await say('誰のことですか？');
@@ -460,7 +491,7 @@ async function todoCapture(){
       t.content = await textForm('例：電話する、訪問する', '入れる', null);
     }
     await say('揃いました。まとめますね。');
-    await workPose(1900);
+    await workPose(2800);
     setStatus('夕の入力を手伝っています');
     sayCard(todoCardHTML(t));
     const act = await choices([
