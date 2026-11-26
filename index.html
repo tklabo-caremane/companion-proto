@@ -71,6 +71,23 @@
   .speak{ margin-left:0; }
   .restart{ display:none; width:100%; margin-top:18px; border:1.5px solid var(--teal); background:#fff; color:var(--teal-dark); font-size:15px; font-weight:700; border-radius:10px; padding:12px; cursor:pointer; }
   .note{ font-size:12px; color:var(--muted); text-align:center; margin-top:16px; line-height:1.6; }
+
+  /* ---------- 設定（歯車ボタン＋シート） ---------- */
+  #gear{ margin-left:auto; flex:none; width:38px; height:38px; border-radius:50%; border:1px solid var(--line); background:#fff; color:var(--teal-dark); font-size:19px; line-height:1; cursor:pointer; }
+  #gear:active{ opacity:.7; }
+  #sheet-overlay{ display:none; position:fixed; inset:0; background:rgba(43,43,40,.45); z-index:50; align-items:flex-end; justify-content:center; }
+  #sheet-overlay.open{ display:flex; }
+  #sheet{ background:var(--cream); width:100%; max-width:520px; max-height:86vh; max-height:86dvh; overflow-y:auto; border-radius:16px 16px 0 0; padding:16px 16px 26px; animation:fadein .18s ease; }
+  #sheet h2{ font-size:16px; margin:0; color:var(--teal-dark); }
+  #sheet h3{ font-size:13px; margin:18px 0 8px; color:var(--muted); }
+  .sheet-head{ display:flex; align-items:center; justify-content:space-between; }
+  #sheet-close{ width:34px; height:34px; border-radius:50%; border:1px solid var(--line); background:#fff; color:var(--ink); font-size:15px; cursor:pointer; }
+  .ovbtns{ display:flex; gap:10px; }
+  .ovbtn{ flex:1; border:1.5px solid var(--line); border-radius:10px; padding:11px 4px; text-align:center; cursor:pointer; background:#fff; font-size:14px; font-weight:700; color:var(--ink); }
+  .ovbtn.sel{ border-color:var(--teal); background:#F0F6F3; color:var(--teal-dark); }
+  .ovbtn .d{ display:block; font-size:11px; font-weight:400; color:var(--muted); margin-top:2px; }
+  #sheet-apply{ width:100%; margin-top:20px; border:none; background:var(--teal); color:#fff; font-size:15px; font-weight:700; border-radius:10px; padding:12px; cursor:pointer; }
+  #sheet-done{ width:100%; margin-top:8px; background:#fff; color:var(--teal-dark); border:1.5px solid var(--line); font-size:15px; font-weight:700; border-radius:10px; padding:12px; cursor:pointer; }
 </style>
 </head>
 <body>
@@ -79,30 +96,12 @@
     <div class="stage-char">
       <span id="stage-face"></span>
     </div>
+    <button id="gear" onclick="openSheet()" aria-label="設定">⚙</button>
   </div>
 </div>
 
 <main id="scroller">
  <div class="wrap">
-  <div class="panel" id="setup">
-    <h2>① 相手を選んでください</h2>
-    <div class="chars">
-      <div class="char sel" id="char-male" onclick="selectChar('male')">
-        <img src="male.png" alt="男性キャラ" width="72" height="72">
-        <div class="n">男性キャラ</div><div class="d">同僚みたいな存在</div>
-      </div>
-      <div class="char" id="char-hiro" onclick="selectChar('hiro')">
-        <span id="hiro-thumb"></span>
-        <div class="n">ヒロ</div><div class="d">丁寧な案内役</div>
-      </div>
-    </div>
-    <h2 style="margin-top:16px;">② 流れを選んでください</h2>
-    <div class="flows">
-      <button class="flowbtn" onclick="startMorning()">☀ 朝の流れ</button>
-      <button class="flowbtn sub" onclick="startEvening()">🌙 夕の流れ</button>
-    </div>
-  </div>
-
   <div class="progress" id="progress">
     <div class="row"><span id="prog-text">全4件</span><b id="prog-rest">あと4件</b></div>
     <div class="bar"><i id="prog-bar"></i></div>
@@ -113,6 +112,31 @@
   <p class="note">これは様子見のための試作です。本番アプリには入っていません。<br>例に出てくる名前はすべて架空のものです。</p>
  </div>
 </main>
+
+<div id="sheet-overlay">
+  <div id="sheet">
+    <div class="sheet-head"><h2>設定</h2><button id="sheet-close" onclick="closeSheet()" aria-label="閉じる">✕</button></div>
+    <h3>相手</h3>
+    <div class="chars">
+      <div class="char sel" id="char-male" onclick="selectChar('male')">
+        <img src="male.png" alt="男性キャラ" width="72" height="72">
+        <div class="n">男性キャラ</div><div class="d">同僚みたいな存在</div>
+      </div>
+      <div class="char" id="char-hiro" onclick="selectChar('hiro')">
+        <span id="hiro-thumb"></span>
+        <div class="n">ヒロ</div><div class="d">丁寧な案内役</div>
+      </div>
+    </div>
+    <h3>流れ（試作用の上書き）</h3>
+    <div class="ovbtns">
+      <button class="ovbtn sel" id="ov-auto" onclick="setFlowOverride('auto')">自動<span class="d">時刻で判定</span></button>
+      <button class="ovbtn" id="ov-morning" onclick="setFlowOverride('morning')">朝<span class="d">朝の流れ</span></button>
+      <button class="ovbtn" id="ov-evening" onclick="setFlowOverride('evening')">夕<span class="d">夕の流れ</span></button>
+    </div>
+    <button id="sheet-apply" onclick="applyAndRestart()">この設定で最初から</button>
+    <button id="sheet-done" onclick="closeSheet()">閉じる</button>
+  </div>
+</div>
 
 <script>
 const HIRO_SVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
@@ -129,7 +153,17 @@ const HIRO_SVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
 </svg>`;
 
 const CHAR_NAMES = { male:'男性キャラ', hiro:'ヒロ' };
-let charType = 'male';
+
+/* ---------- 設定（キャラ＋流れ上書き）。メイン画面には出さず、歯車からのシート内だけで変える ---------- */
+let settings = { char:'male', flow:'auto' };
+try{
+  const s = JSON.parse(localStorage.getItem('companion-settings') || 'null');
+  if(s){ if(s.char) settings.char = s.char; if(s.flow) settings.flow = s.flow; }
+}catch(e){}
+function saveSettings(){
+  try{ localStorage.setItem('companion-settings', JSON.stringify(settings)); }catch(e){}
+}
+let charType = settings.char === 'hiro' ? 'hiro' : 'male';
 document.getElementById('hiro-thumb').innerHTML = HIRO_SVG;
 
 function avatarHTML(){
@@ -141,11 +175,35 @@ function refreshStage(){
 }
 function selectChar(t){
   charType = t;
+  settings.char = t; saveSettings();
   document.getElementById('char-male').classList.toggle('sel', t==='male');
   document.getElementById('char-hiro').classList.toggle('sel', t==='hiro');
   refreshStage();
 }
+function setFlowOverride(v){
+  settings.flow = v; saveSettings();
+  ['auto','morning','evening'].forEach(k => {
+    document.getElementById('ov-' + k).classList.toggle('sel', settings.flow === k);
+  });
+}
+function openSheet(){ document.getElementById('sheet-overlay').classList.add('open'); }
+function closeSheet(){ document.getElementById('sheet-overlay').classList.remove('open'); }
+function applyAndRestart(){ saveSettings(); location.reload(); }
+document.getElementById('sheet-overlay').addEventListener('click', e => {
+  if(e.target.id === 'sheet-overlay') closeSheet();
+});
+/* 保存済み設定をUIに反映 */
+document.getElementById('char-male').classList.toggle('sel', charType==='male');
+document.getElementById('char-hiro').classList.toggle('sel', charType==='hiro');
+setFlowOverride(settings.flow);
 refreshStage();
+
+/* 朝／夕は時刻で自動判定（4:00〜11:59は朝、12:00〜翌3:59は夕）。設定で上書き可能 */
+function decideFlow(){
+  if(settings.flow === 'morning' || settings.flow === 'evening') return settings.flow;
+  const h = new Date().getHours();
+  return (h >= 4 && h < 12) ? 'morning' : 'evening';
+}
 
 const chat = document.getElementById('chat');
 const stage = document.getElementById('stage');
@@ -308,11 +366,10 @@ async function workPose(ms){
   if(swapped) refreshStage();
 }
 function showRestart(){ document.getElementById('restart').style.display = 'block'; scrollDown(); }
-function lockSetup(){ document.getElementById('setup').style.opacity = '.55'; document.getElementById('setup').style.pointerEvents = 'none'; }
 
 /* ---------- 朝の流れ ---------- */
 async function startMorning(){
-  lockSetup(); resetScroll(); setStatus('朝の確認をしています');
+  resetScroll(); setStatus('朝の確認をしています');
   await say('おはようございます。今日の予定を確認しましょう。');
   await say('今日の予定は、訪問が2件、電話が1件です。\n10時から山田さんのお宅へ訪問、13時に高橋さんへ電話、15時から佐藤さんのお宅へ訪問です。');
   await speakBtn('今日の予定は、訪問が2件、電話が1件です。10時から山田さんのお宅へ訪問、13時に高橋さんへ電話、15時から佐藤さんのお宅へ訪問です。');
@@ -343,7 +400,7 @@ async function finishItem(label){
 }
 
 async function startEvening(){
-  lockSetup(); resetScroll(); setStatus('夕の入力を手伝っています');
+  resetScroll(); setStatus('夕の入力を手伝っています');
   const p = document.getElementById('progress'); p.style.display = 'block'; updateProgress();
   await say('お疲れさまでした。今日の入力を一緒に片付けましょう。全部で4件あります。1件ずつ聞いていきますね。');
 
@@ -501,6 +558,9 @@ async function todoCapture(){
     if(f === 'content') t.content = '';
   }
 }
+
+/* ---------- 起動：開いたら選択UIなしで、そのまま会話を始める ---------- */
+if(decideFlow() === 'morning'){ startMorning(); } else { startEvening(); }
 </script>
 </body>
 </html>
