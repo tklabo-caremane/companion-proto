@@ -8,9 +8,28 @@
   :root{ --teal:#0B7A68; --teal-dark:#075C4E; --cream:#FAF5EA; --card:#FFFFFF; --ink:#2B2B28; --muted:#8A8578; --line:#E7DFCE; --red:#C0392B; }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body{ margin:0; font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",sans-serif; background:var(--cream); color:var(--ink); }
-  header{ background:var(--teal); color:#fff; padding:14px 16px; position:sticky; top:0; z-index:5; }
+  .topsticky{ position:sticky; top:0; z-index:10; box-shadow:0 2px 8px rgba(60,50,20,.08); }
+  header{ background:var(--teal); color:#fff; padding:12px 16px; }
   header .t{ font-size:17px; font-weight:700; }
   header .s{ font-size:12px; opacity:.85; margin-top:2px; }
+
+  /* ---------- キャラ常駐ステージ ---------- */
+  #stage{ display:flex; align-items:center; gap:14px; background:#fff; border-bottom:1px solid var(--line); padding:10px 16px; }
+  .stage-char{ position:relative; width:88px; height:88px; flex:none; }
+  .stage-char img,.stage-char svg{ width:88px; height:88px; object-fit:cover; object-position:top; border-radius:16px; border:2px solid var(--teal); background:#F3EDDD; display:block; }
+  #stage.working .stage-char img,#stage.working .stage-char svg{ animation:bob .28s ease-in-out infinite alternate; }
+  @keyframes bob{ from{ transform:translateY(0);} to{ transform:translateY(2.5px);} }
+  .laptop{ position:absolute; left:50%; bottom:-10px; transform:translateX(-50%) translateY(6px) scale(.7); opacity:0; transition:all .3s ease; pointer-events:none; }
+  #stage.working .laptop{ opacity:1; transform:translateX(-50%) translateY(0) scale(1); }
+  .laptop .scr-dot{ animation:blink 0.9s infinite; }
+  .laptop .scr-dot.d2{ animation-delay:.3s; } .laptop .scr-dot.d3{ animation-delay:.6s; }
+  @keyframes blink{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
+  .stage-info{ flex:1; min-width:0; }
+  .stage-name{ font-size:16px; font-weight:700; color:var(--teal-dark); }
+  .stage-status{ font-size:13px; color:var(--muted); margin-top:3px; min-height:18px; }
+  .dotanim i{ font-style:normal; animation:blink 1s infinite; }
+  .dotanim i:nth-child(2){ animation-delay:.25s; } .dotanim i:nth-child(3){ animation-delay:.5s; }
+
   main{ max-width:520px; margin:0 auto; padding:14px 12px 40px; }
   .panel{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:14px; }
   .panel h2{ font-size:14px; margin:0 0 10px; color:var(--teal-dark); }
@@ -29,16 +48,26 @@
   .progress .row b{ color:var(--teal-dark); }
   .bar{ height:8px; background:#EFE9D8; border-radius:99px; overflow:hidden; }
   .bar i{ display:block; height:100%; width:0%; background:var(--teal); border-radius:99px; transition:width .4s; }
+
+  /* ---------- LINE風チャット ---------- */
   #chat{ display:flex; flex-direction:column; gap:10px; }
   .msg{ display:flex; gap:8px; align-items:flex-start; animation:pop .25s ease; }
   @keyframes pop{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:none;} }
   .msg .av{ width:40px; height:40px; border-radius:50%; overflow:hidden; flex:none; border:2px solid var(--teal); background:#F3EDDD; }
   .msg .av img,.msg .av svg{ width:100%; height:100%; object-fit:cover; object-position:top; }
-  .bubble{ background:var(--card); border:1px solid var(--line); border-radius:4px 14px 14px 14px; padding:10px 12px; font-size:15px; line-height:1.55; max-width:82%; white-space:pre-wrap; }
+  .bubble{ background:var(--card); border:1px solid var(--line); border-radius:4px 14px 14px 14px; padding:10px 12px; font-size:15px; line-height:1.55; max-width:82%; white-space:pre-wrap; cursor:pointer; }
   .bubble .red{ color:var(--red); font-weight:700; }
   .bubble.draft{ background:#FFFDF4; border-style:dashed; font-size:14px; }
+  .bubble.typing{ display:flex; gap:4px; align-items:center; padding:14px 12px; cursor:default; }
+  .bubble.typing span{ width:7px; height:7px; border-radius:50%; background:#B9B2A0; animation:blink 1s infinite; }
+  .bubble.typing span:nth-child(2){ animation-delay:.2s; } .bubble.typing span:nth-child(3){ animation-delay:.4s; }
+  .bubble.card{ background:#EFF7F4; border:2px solid var(--teal); border-radius:12px; cursor:default; min-width:230px; }
+  .bubble.card .ct{ font-size:12px; font-weight:700; color:var(--teal-dark); letter-spacing:.06em; margin-bottom:6px; }
+  .bubble.card table{ border-collapse:collapse; font-size:14.5px; }
+  .bubble.card th{ text-align:left; color:var(--muted); font-weight:700; padding:2px 10px 2px 0; white-space:nowrap; vertical-align:top; }
+  .bubble.card td{ padding:2px 0; font-weight:700; }
   .me{ display:flex; justify-content:flex-end; animation:pop .25s ease; }
-  .me .b{ background:var(--teal); color:#fff; border-radius:14px 4px 14px 14px; padding:9px 12px; font-size:15px; max-width:82%; }
+  .me .b{ background:var(--teal); color:#fff; border-radius:14px 4px 14px 14px; padding:9px 12px; font-size:15px; max-width:82%; white-space:pre-wrap; }
   .done-item{ display:flex; align-items:center; gap:8px; background:#EFF7F4; border:1px solid #CFE6DE; color:var(--teal-dark); border-radius:10px; padding:7px 10px; font-size:13px; animation:pop .25s ease; }
   .done-item .ck{ font-weight:700; }
   .choices{ display:flex; flex-wrap:wrap; gap:8px; margin:2px 0 4px 48px; animation:pop .25s ease; }
@@ -47,21 +76,41 @@
   .choices button:active{ opacity:.75; }
   .todo-form{ margin-left:48px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px; animation:pop .25s ease; }
   .todo-form input{ width:100%; font-size:16px; padding:10px; border:1px solid var(--line); border-radius:8px; margin-bottom:8px; }
-  .chips{ display:flex; gap:8px; margin-bottom:10px; }
-  .chips button{ border:2px solid var(--line); background:#fff; border-radius:99px; padding:6px 14px; font-size:14px; cursor:pointer; }
-  .chips button.sel{ border-color:var(--teal); background:#EFF7F4; color:var(--teal-dark); font-weight:700; }
   .todo-form .add{ width:100%; border:none; background:var(--teal); color:#fff; font-size:15px; font-weight:700; border-radius:10px; padding:11px; cursor:pointer; }
+  .todo-form .none{ width:100%; background:#fff; color:var(--teal-dark); border:2px solid var(--line); font-size:15px; font-weight:700; border-radius:10px; padding:11px; cursor:pointer; margin-top:8px; }
   .speak{ margin-left:48px; }
-  .speak button{ border:2px solid var(--teal); background:#EFF7F4; color:var(--teal-dark); border-radius:99px; padding:8px 16px; font-size:14px; font-weight:700; cursor:pointer; }
   .restart{ display:none; width:100%; margin-top:18px; border:2px solid var(--teal); background:#fff; color:var(--teal-dark); font-size:15px; font-weight:700; border-radius:12px; padding:12px; cursor:pointer; }
   .note{ font-size:12px; color:var(--muted); text-align:center; margin-top:16px; line-height:1.6; }
 </style>
 </head>
 <body>
-<header>
-  <div class="t">コンパニオン試作</div>
-  <div class="s">ケアマネ手帳 ― 会話形式で仕事画面につなぐ試作です</div>
-</header>
+<div class="topsticky">
+  <header>
+    <div class="t">コンパニオン試作</div>
+    <div class="s">ケアマネ手帳 ― 会話形式で仕事画面につなぐ試作です</div>
+  </header>
+  <div id="stage">
+    <div class="stage-char">
+      <span id="stage-face"></span>
+      <svg class="laptop" width="72" height="50" viewBox="0 0 72 50" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="2" width="56" height="36" rx="4" fill="#3A3F44"/>
+        <rect x="12" y="6" width="48" height="28" rx="2" fill="#BFE8DC"/>
+        <circle class="scr-dot" cx="22" cy="14" r="3" fill="#0B7A68"/>
+        <circle class="scr-dot d2" cx="34" cy="14" r="3" fill="#0B7A68"/>
+        <circle class="scr-dot d3" cx="46" cy="14" r="3" fill="#0B7A68"/>
+        <rect x="16" y="24" width="34" height="3.4" rx="1.7" fill="#0B7A68" opacity=".65"/>
+        <rect x="16" y="29" width="24" height="3.4" rx="1.7" fill="#0B7A68" opacity=".45"/>
+        <path d="M2 44 L70 44 L64 38 L8 38 Z" fill="#565D63"/>
+        <rect x="28" y="40" width="16" height="2.4" rx="1.2" fill="#3A3F44"/>
+      </svg>
+    </div>
+    <div class="stage-info">
+      <div class="stage-name" id="stage-name">男性キャラ</div>
+      <div class="stage-status" id="stage-status">相手を選んで、朝か夕の流れを始めてください</div>
+    </div>
+  </div>
+</div>
+
 <main>
   <div class="panel" id="setup">
     <h2>① 相手を選んでください</h2>
@@ -106,6 +155,7 @@ const HIRO_SVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
   <circle cx="35" cy="54" r="3" fill="#F5A58E" opacity=".55"/><circle cx="65" cy="54" r="3" fill="#F5A58E" opacity=".55"/>
 </svg>`;
 
+const CHAR_NAMES = { male:'男性キャラ', hiro:'ヒロ' };
 let charType = 'male';
 document.getElementById('hiro-thumb').innerHTML = HIRO_SVG;
 
@@ -113,31 +163,95 @@ function avatarHTML(){
   if(charType === 'male') return '<img src="male.png" alt="">';
   return HIRO_SVG;
 }
+function refreshStage(){
+  document.getElementById('stage-face').innerHTML = avatarHTML();
+  document.getElementById('stage-name').textContent = CHAR_NAMES[charType];
+}
 function selectChar(t){
   charType = t;
   document.getElementById('char-male').classList.toggle('sel', t==='male');
   document.getElementById('char-hiro').classList.toggle('sel', t==='hiro');
+  refreshStage();
 }
+refreshStage();
 
 const chat = document.getElementById('chat');
+const stage = document.getElementById('stage');
 const wait = ms => new Promise(r => setTimeout(r, ms));
 function scrollDown(){ window.scrollTo({top: document.body.scrollHeight, behavior:'smooth'}); }
+function setStatus(t){ document.getElementById('stage-status').textContent = t; }
+function setStatusTyping(){
+  document.getElementById('stage-status').innerHTML = '入力中<span class="dotanim"><i>.</i><i>.</i><i>.</i></span>';
+}
 
-async function say(text, cls){
-  await wait(550);
+/* ---------- タイプライター（ドラクエ式） ---------- */
+function collectTextNodes(node, arr){
+  node.childNodes.forEach(n => {
+    if(n.nodeType === 3) arr.push(n);
+    else collectTextNodes(n, arr);
+  });
+}
+function typeInto(bubble, speed){
+  return new Promise(resolve => {
+    const nodes = []; collectTextNodes(bubble, nodes);
+    const texts = nodes.map(n => n.textContent);
+    const total = texts.reduce((a, t) => a + t.length, 0);
+    if(total === 0){ resolve(); return; }
+    nodes.forEach(n => n.textContent = '');
+    let shown = 0, finished = false, iv = null;
+    const finish = () => {
+      if(finished) return; finished = true;
+      if(iv) clearInterval(iv);
+      nodes.forEach((n, j) => n.textContent = texts[j]);
+      bubble.removeEventListener('click', finish);
+      resolve();
+    };
+    bubble.addEventListener('click', finish);
+    iv = setInterval(() => {
+      shown++;
+      let rest = shown;
+      nodes.forEach((n, j) => {
+        const t = texts[j];
+        const take = Math.max(0, Math.min(t.length, rest));
+        n.textContent = t.slice(0, take);
+        rest -= t.length;
+      });
+      if(shown % 4 === 0) scrollDown();
+      if(shown >= total){ finish(); }
+    }, speed || 30);
+  });
+}
+
+/* ---------- 会話部品 ---------- */
+async function say(html, cls){
+  const ind = document.createElement('div'); ind.className = 'msg';
+  ind.innerHTML = `<div class="av">${avatarHTML()}</div><div class="bubble typing"><span></span><span></span><span></span></div>`;
+  chat.appendChild(ind); scrollDown();
+  await wait(480);
+  ind.remove();
   const d = document.createElement('div'); d.className = 'msg';
-  d.innerHTML = `<div class="av">${avatarHTML()}</div><div class="bubble${cls?' '+cls:''}">${text}</div>`;
+  const av = document.createElement('div'); av.className = 'av'; av.innerHTML = avatarHTML();
+  const bub = document.createElement('div'); bub.className = 'bubble' + (cls ? ' ' + cls : '');
+  bub.innerHTML = html;
+  d.appendChild(av); d.appendChild(bub);
   chat.appendChild(d); scrollDown();
-  await wait(350);
+  await typeInto(bub, 30);
+  await wait(200);
+}
+function sayCard(html){
+  const d = document.createElement('div'); d.className = 'msg';
+  d.innerHTML = `<div class="av">${avatarHTML()}</div><div class="bubble card">${html}</div>`;
+  chat.appendChild(d); scrollDown();
 }
 function me(text){
   const d = document.createElement('div'); d.className = 'me';
-  d.innerHTML = `<div class="b">${text}</div>`;
-  chat.appendChild(d); scrollDown();
+  const b = document.createElement('div'); b.className = 'b'; b.textContent = text;
+  d.appendChild(b); chat.appendChild(d); scrollDown();
 }
 function doneItem(text){
   const d = document.createElement('div'); d.className = 'done-item';
-  d.innerHTML = `<span class="ck">✓</span><span>${text}</span>`;
+  d.innerHTML = `<span class="ck">✓</span><span></span>`;
+  d.querySelector('span:last-child').textContent = text;
   chat.appendChild(d); scrollDown();
 }
 function choices(list){
@@ -150,6 +264,28 @@ function choices(list){
       wrap.appendChild(b);
     });
     chat.appendChild(wrap); scrollDown();
+  });
+}
+function textForm(placeholder, submitLabel, noneLabel){
+  return new Promise(resolve => {
+    const wrap = document.createElement('div'); wrap.className = 'todo-form';
+    const input = document.createElement('input');
+    input.type = 'text'; input.placeholder = placeholder;
+    const add = document.createElement('button'); add.className = 'add'; add.textContent = submitLabel;
+    wrap.appendChild(input); wrap.appendChild(add);
+    if(noneLabel){
+      const none = document.createElement('button'); none.className = 'none'; none.textContent = noneLabel;
+      none.onclick = () => { me(noneLabel); wrap.remove(); resolve(null); };
+      wrap.appendChild(none);
+    }
+    chat.appendChild(wrap); scrollDown();
+    input.focus();
+    add.onclick = () => {
+      const v = input.value.trim();
+      if(!v){ input.focus(); return; }
+      me(v); wrap.remove(); resolve(v);
+    };
+    input.addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); add.click(); } });
   });
 }
 function speakBtn(textToRead){
@@ -170,12 +306,17 @@ function speakBtn(textToRead){
     chat.appendChild(wrap); scrollDown();
   });
 }
+async function workPose(ms){
+  stage.classList.add('working'); setStatusTyping();
+  await wait(ms);
+  stage.classList.remove('working');
+}
 function showRestart(){ document.getElementById('restart').style.display = 'block'; scrollDown(); }
 function lockSetup(){ document.getElementById('setup').style.opacity = '.55'; document.getElementById('setup').style.pointerEvents = 'none'; }
 
 /* ---------- 朝の流れ ---------- */
 async function startMorning(){
-  lockSetup();
+  lockSetup(); setStatus('朝の確認をしています');
   await say('おはようございます。今日の予定を確認しましょう。');
   await say('今日の予定は、訪問が2件、電話が1件です。\n10時から山田さんのお宅へ訪問、13時に高橋さんへ電話、15時から佐藤さんのお宅へ訪問です。');
   await speakBtn('今日の予定は、訪問が2件、電話が1件です。10時から山田さんのお宅へ訪問、13時に高橋さんへ電話、15時から佐藤さんのお宅へ訪問です。');
@@ -189,6 +330,7 @@ async function startMorning(){
   if(v === 'today') await say('今日の予定を開きます。（試作ではここまでです）');
   if(v === 'later') await say('分かりました。あとでまた声をかけますね。');
   await say('朝の確認は以上です。いってらっしゃい。');
+  setStatus('朝の確認が終わりました');
   showRestart();
 }
 
@@ -205,7 +347,7 @@ async function finishItem(label){
 }
 
 async function startEvening(){
-  lockSetup();
+  lockSetup(); setStatus('夕の入力を手伝っています');
   const p = document.getElementById('progress'); p.style.display = 'block'; updateProgress();
   await say('お疲れさまでした。今日の入力を一緒に片付けましょう。全部で4件あります。1件ずつ聞いていきますね。');
 
@@ -234,11 +376,11 @@ async function startEvening(){
   await finishItem(v === 'done' ? '佐藤さん モニタリング完了' : '佐藤さん モニタリングは未完了のまま');
   await say(v === 'done' ? '記録しました。' : '分かりました。そのまま残しておきます。');
 
-  /* 件4：今日発生したtodo */
-  await say('最後です。今日、電話や訪問で発生したtodoはありますか？');
-  const todo = await todoForm();
+  /* 件4：今日発生したtodo（1行放り込み→自動まとめ） */
+  await say('最後です。今日、電話や訪問で発生したtodoはありますか？\n1行で放り込んでくれれば、私がまとめます。');
+  const todo = await todoCapture();
   if(todo){
-    await finishItem(`todo追加：${todo.text}（期限：${todo.due}）`);
+    await finishItem(`todo追加：${todo.person}さん・${todo.due || '期限なし'}・${todo.content}`);
     await say('追加しました。');
   } else {
     await finishItem('今日発生したtodoはなし');
@@ -246,33 +388,96 @@ async function startEvening(){
   }
 
   await say('全部終わりました。お疲れさまでした。ゆっくり休んでくださいね。');
+  setStatus('夕の入力が終わりました');
   showRestart();
 }
 
-function todoForm(){
-  return new Promise(resolve => {
-    const wrap = document.createElement('div'); wrap.className = 'todo-form';
-    wrap.innerHTML = `
-      <input type="text" placeholder="todoを1行で入力" id="todo-input">
-      <div class="chips">
-        <button data-due="明日" class="sel">明日</button>
-        <button data-due="来週">来週</button>
-        <button data-due="なし">なし</button>
-      </div>
-      <button class="add" id="todo-add">追加する</button>
-      <button class="add" id="todo-none" style="background:#fff;color:var(--teal-dark);border:2px solid var(--line);margin-top:8px;">今日はなし</button>`;
-    chat.appendChild(wrap); scrollDown();
-    let due = '明日';
-    wrap.querySelectorAll('.chips button').forEach(b => {
-      b.onclick = () => { wrap.querySelectorAll('.chips button').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); due = b.dataset.due; };
-    });
-    wrap.querySelector('#todo-add').onclick = () => {
-      const text = wrap.querySelector('#todo-input').value.trim();
-      if(!text){ wrap.querySelector('#todo-input').focus(); return; }
-      me(text + '（期限：' + due + '）'); wrap.remove(); resolve({text, due});
-    };
-    wrap.querySelector('#todo-none').onclick = () => { me('今日はなし'); wrap.remove(); resolve(null); };
-  });
+/* ---------- todoの自動まとめ ---------- */
+const ROSTER = ['山田', '高橋', '佐藤', '田中', '鈴木'];
+const DUE_WORDS = [
+  { re:/あさって|明後日/, label:'あさって' },
+  { re:/明日|あした/, label:'明日' },
+  { re:/今日中|今日|きょう/, label:'今日' },
+  { re:/来週/, label:'来週' },
+  { re:/今週/, label:'今週' },
+  { re:/月末/, label:'月末' },
+  { re:/来月/, label:'来月' }
+];
+function parseTodo(text){
+  let rest = text, person = null, due = null;
+  for(const name of ROSTER){
+    if(rest.includes(name)){ person = name; break; }
+  }
+  if(person) rest = rest.replace(new RegExp(person + 'さん?'), ' ');
+  for(const d of DUE_WORDS){
+    if(d.re.test(rest)){ due = d.label; rest = rest.replace(d.re, ' '); break; }
+  }
+  let content = rest.replace(/[\s　]+/g, ' ').trim();
+  content = content.split(' ').filter(tok => !/^(さん|様|に|へ|を|の|と)$/.test(tok)).join(' ');
+  content = content.replace(/^(に|へ)(?=\S)/, '').replace(/(、|。)+$/, '').trim();
+  return { person, due, content };
+}
+function todoCardHTML(t){
+  return `<div class="ct">TODO（まとめました）</div>
+  <table>
+    <tr><th>利用者</th><td>${t.person}さん</td></tr>
+    <tr><th>期限</th><td>${t.due || 'なし'}</td></tr>
+    <tr><th>内容</th><td>${t.content}</td></tr>
+  </table>`;
+}
+async function askDue(){
+  await say('期限はいつにしますか？');
+  const dv = await choices([
+    {label:'明日', value:'明日'},
+    {label:'来週', value:'来週'},
+    {label:'なし', value:''}
+  ]);
+  return dv || null;
+}
+async function todoCapture(){
+  const raw = await textForm('例：山田さんに明日電話', '放り込む', '今日はなし');
+  if(raw === null) return null;
+  const t = parseTodo(raw);
+  let dueDecided = !!t.due; /* 「なし」を選んだ場合も含め、決まったかどうかを管理 */
+
+  const picked = [];
+  if(t.person) picked.push(`利用者は${t.person}さん`);
+  if(t.due) picked.push(`期限は${t.due}`);
+  if(t.content) picked.push(`内容は「${t.content}」`);
+  if(picked.length) await say('受け取りました。' + picked.join('、') + 'ですね。');
+
+  while(true){
+    if(!t.person){
+      await say('誰のことですか？');
+      t.person = await choices(ROSTER.map(n => ({ label:n + 'さん', value:n })));
+    }
+    if(!dueDecided){
+      t.due = await askDue();
+      dueDecided = true;
+    }
+    if(!t.content){
+      await say('内容を教えてください。');
+      t.content = await textForm('例：電話する、訪問する', '入れる', null);
+    }
+    await say('揃いました。まとめますね。');
+    await workPose(1900);
+    setStatus('夕の入力を手伝っています');
+    sayCard(todoCardHTML(t));
+    const act = await choices([
+      {label:'登録する', value:'ok'},
+      {label:'直す', value:'fix'}
+    ]);
+    if(act === 'ok') return t;
+    await say('どこを直しますか？');
+    const f = await choices([
+      {label:'利用者', value:'person'},
+      {label:'期限', value:'due'},
+      {label:'内容', value:'content'}
+    ]);
+    if(f === 'person') t.person = null;
+    if(f === 'due') dueDecided = false;
+    if(f === 'content') t.content = '';
+  }
 }
 </script>
 </body>
