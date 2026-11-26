@@ -13,16 +13,14 @@
   /* ---------- キャラ常駐ステージ（固定表示・影なし） ---------- */
   .stagewrap{ flex:none; background:var(--cream); }
   #stage{ max-width:520px; margin:0 auto; display:flex; align-items:center; gap:14px; border-bottom:1px solid var(--line); padding:10px 16px; }
-  /* ステージ帯の高さは120pxで固定：タイピング表示（横長）⇔通常ポーズ（正方形）を
-     切り替えても帯の高さが変わらず、会話エリアが上下にガタつかない */
-  .stage-char{ position:relative; flex:1; min-width:0; height:120px; }
+  /* ステージの枠は 180×120 で完全固定：状態（通常／タイピング）とキャラによらず
+     枠の大きさは変えず、中の絵だけを差し替える。枠はタイピング構図（3:2・横長）が
+     収まる前提で決め、通常ポーズも同じ枠に同じ基準（全体表示・中央寄せ）で収める。
+     切り替えても会話エリアは一切動かない */
+  .stage-char{ position:relative; flex:none; width:180px; height:120px; }
   /* キャラは原則として完全静止。動かす場合はポーズ絵の差し替えでのみ行う */
-  .stage-char img,.stage-char svg,.stage-char video{ width:88px; height:88px; aspect-ratio:1/1; object-fit:cover; object-position:top; border-radius:12px; border:1px solid var(--line); background:#F3EDDD; display:block; }
-  /* タイピング表示は横向き構図（3:2）を帯状に全体表示する（切り取らず contain で見せる） */
-  .stage-char video.ly-anim,.stage-char img.ly-typing{ width:180px; height:120px; aspect-ratio:3/2; object-fit:contain; object-position:center; border:none; border-radius:0; background:transparent; }
-  /* ステージ内のレイヤー（通常ポーズ／タイピングアニメ／タイピング静止画）を重ねて切り替える */
-  #stage-face{ position:relative; display:block; width:100%; height:120px; }
-  #stage-face .ly{ position:absolute; left:0; top:50%; transform:translateY(-50%); }
+  #stage-face{ position:relative; display:block; width:180px; height:120px; }
+  #stage-face .ly{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; object-position:center; display:block; }
   @keyframes blink{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
 
   /* ---------- 会話エリアだけがスクロールする ---------- */
@@ -130,7 +128,7 @@
         <div class="n">男性キャラ</div><div class="d">同僚みたいな存在</div>
       </div>
       <div class="char" id="char-hiro" onclick="selectChar('hiro')">
-        <span id="hiro-thumb"></span>
+        <img src="hiro.png" alt="ヒロ" width="72" height="72">
         <div class="n">ヒロ</div><div class="d">丁寧な案内役</div>
       </div>
     </div>
@@ -146,19 +144,6 @@
 </div>
 
 <script>
-const HIRO_SVG = `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-  <rect width="100" height="100" fill="#F3EDDD"/>
-  <path d="M50 96 L50 78 C38 74 30 82 28 96 Z" fill="#0B7A68"/>
-  <path d="M50 96 L50 78 C62 74 70 82 72 96 Z" fill="#0B7A68"/>
-  <rect x="44" y="66" width="12" height="12" fill="#F6CFAF"/>
-  <path d="M50 70 L44 78 L50 88 L56 78 Z" fill="#FFFFFF"/>
-  <circle cx="50" cy="46" r="21" fill="#FBD9B8"/>
-  <path d="M27 50 C25 22 38 12 50 12 C62 12 75 22 73 50 C73 56 71 60 69 62 C68 46 64 34 58 30 C64 40 63 30 50 28 C38 30 33 38 31 62 C29 60 27 56 27 50 Z" fill="#4A3226"/>
-  <circle cx="42" cy="47" r="2.4" fill="#2B2B28"/><circle cx="58" cy="47" r="2.4" fill="#2B2B28"/>
-  <path d="M45 58 Q50 61 55 58" stroke="#B4654A" stroke-width="1.8" fill="none" stroke-linecap="round"/>
-  <circle cx="35" cy="54" r="3" fill="#F5A58E" opacity=".55"/><circle cx="65" cy="54" r="3" fill="#F5A58E" opacity=".55"/>
-</svg>`;
-
 const CHAR_NAMES = { male:'男性キャラ', hiro:'ヒロ' };
 
 /* タイピング表示の可否フラグ（キャラ別）。refreshStage() がスクリプト前半で
@@ -176,27 +161,19 @@ function saveSettings(){
   try{ localStorage.setItem('companion-settings', JSON.stringify(settings)); }catch(e){}
 }
 let charType = settings.char === 'hiro' ? 'hiro' : 'male';
-document.getElementById('hiro-thumb').innerHTML = HIRO_SVG;
 
-function avatarHTML(){
-  if(charType === 'male') return '<img src="male.png" alt="" width="88" height="88">';
-  return HIRO_SVG;
-}
-/* ステージは3レイヤー重ね：通常ポーズ（ly-idle）／タイピングアニメ動画（ly-anim）／
-   動画が使えない環境向けのタイピング静止画（ly-typing）。表示切替は stageTyping() が行う */
+/* ステージは固定枠（180×120）の中に3レイヤー重ね：通常ポーズ（ly-idle）／
+   タイピングアニメ動画（ly-anim）／動画が使えない環境向けのタイピング静止画（ly-typing）。
+   どのレイヤーも枠いっぱいに同じ基準で収まり、表示切替は stageTyping() が行う */
 function refreshStage(){
   const face = document.getElementById('stage-face');
-  if(charType === 'male'){
-    face.innerHTML =
-      '<span class="ly ly-idle"><img src="male.png" alt="" width="88" height="88"></span>' +
-      '<video class="ly ly-anim" src="male-typing-anim.webm" muted loop playsinline preload="auto" width="180" height="120" style="display:none"></video>' +
-      '<img class="ly ly-typing" src="male-typing.png" alt="" width="180" height="120" style="display:none">';
-  } else {
-    face.innerHTML =
-      '<span class="ly ly-idle">' + HIRO_SVG + '</span>' +
-      '<video class="ly ly-anim" src="hiro-typing-anim.webm" muted loop playsinline preload="auto" width="180" height="120" style="display:none"></video>' +
-      '<img class="ly ly-typing" src="hiro-typing.png" alt="" width="180" height="120" style="display:none">';
-  }
+  const idleSrc = charType === 'male' ? 'male.png' : 'hiro.png';
+  const animSrc = charType === 'male' ? 'male-typing-anim.webm' : 'hiro-typing-anim.webm';
+  const stillSrc = charType === 'male' ? 'male-typing.png' : 'hiro-typing.png';
+  face.innerHTML =
+    '<img class="ly ly-idle" src="' + idleSrc + '" alt="" width="180" height="120">' +
+    '<video class="ly ly-anim" src="' + animSrc + '" muted loop playsinline preload="auto" width="180" height="120" style="display:none"></video>' +
+    '<img class="ly ly-typing" src="' + stillSrc + '" alt="" width="180" height="120" style="display:none">';
   probeAnimVideo(face.querySelector('video.ly-anim'), charType);
 }
 function selectChar(t){
@@ -376,8 +353,8 @@ function speakBtn(textToRead){
   });
 }
 /* タイピングアニメーション（キャラ別：male-typing-anim.webm／hiro-typing-anim.webm。
-   どちらも横向き構図で横顔のまま両手がキーボードを打つ透過WebM）と、
-   フォールバック用の静止画（male-typing.png／hiro-typing.png・同じ横向き構図）を用意する。
+   どちらも斜め45°の構図でノートPCを打つ透過WebM）と、
+   フォールバック用の静止画（male-typing.png／hiro-typing.png・同じ45°構図）を用意する。
    動画が使える環境では動画、使えない場合は静止画、どちらも無い場合は通常ポーズのまま（エラーにしない） */
 [['male', 'male-typing.png'], ['hiro', 'hiro-typing.png']].forEach(([key, src]) => {
   const im = new Image();
