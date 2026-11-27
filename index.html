@@ -501,7 +501,13 @@ async function startEvening(){
     await say('分かりました。');
   }
 
-  await say('全部終わりました。お疲れさまでした。ゆっくり休んでくださいね。');
+  const closings = [
+    '全部終わりました。お疲れさまでした。',
+    '今日の分は以上です。お疲れさまでした。',
+    '片付きましたね。お疲れさまでした。',
+    '全部片付きました。お疲れさまでした。',
+  ];
+  await say(closings[new Date().getDate() % closings.length]);
   setStatus('夕の入力が終わりました');
   showRestart();
 }
